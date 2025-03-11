@@ -22,8 +22,8 @@ fun escolherTabuleiro(): Int {
 
 fun mostrarPontuacao() {
     println("\nPontuação do último jogo:")
-    println("Participante 1: 0 pontos") // Exemplo de pontuação, você pode adicionar a lógica para gerenciar isso
-    println("Participante 2: 0 pontos") // Exemplo de pontuação, você pode adicionar a lógica para gerenciar isso
+    println("Participante 1: 0 pontos") // Gerar lógica para poder puxar a pontuação do ultimo jogo
+    println("Participante 2: 0 pontos") // Gerar lógica para poder puxar a pontuação do ultimo jogo
 }
 
 fun exibirRegras() {
@@ -35,6 +35,7 @@ fun exibirRegras() {
     println("5. O jogo termina quando todas as cartas forem viradas e todos os pares forem encontrados.")
     println("6. Aquele que fizer mais pontos vence o jogo.")
     println("Após isso, você poderá iniciar um novo jogo ou consultar a pontuação.")
+
 
     // Pedido para digitar "sair" para voltar ao menu
     println("\nDigite 'sair' para voltar ao menu principal.")
