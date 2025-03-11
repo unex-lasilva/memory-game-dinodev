@@ -28,7 +28,7 @@ fun mostrarPontuacao() {
 
 fun exibirRegras() {
     println("\nRegras do Jogo:")
-    println("1. O objetivo do jogo é fazer o maior número de pares de cartas.")
+    println("1. O objetivo do jogo é fazer o maior número de pares de cartas e pontos.")
     println("2. As cartas possuem cores e valores, e os jogadores devem tentar encontrar pares de cartas com a mesma cor ou valor.")
     println("3. A cada turno, o jogador escolhe duas cartas para virar.")
     println("4. Se as cartas viradas forem iguais, o jogador pontua.")
