@@ -133,38 +133,63 @@ fun exibirTabuleiro(tabuleiro: List<List<Carta>>) {
     println("   " + (1..tabuleiro.size).joinToString("  ") { it.toString() })
 }
 
+fun verificarPontos(carta1: Carta, carta2: Carta, corParticipante1: Cor, corParticipante2: Cor, vezDoParticipante1: Boolean): Int {
+
+    if (carta1.id == carta2.id) {
+
+        if (carta1.cor == CartaCor.AMARELO) {
+            return 1
+        }
+
+        if ((vezDoParticipante1 && carta1.cor == CartaCor.valueOf(corParticipante1.name)) ||
+            (!vezDoParticipante1 && carta1.cor == CartaCor.valueOf(corParticipante2.name))) {
+            return 5
+        }
+
+        if ((vezDoParticipante1 && carta1.cor == CartaCor.valueOf(corParticipante2.name)) ||
+            (!vezDoParticipante1 && carta1.cor == CartaCor.valueOf(corParticipante1.name))) {
+            return 5
+        }
+    } else {
+
+        if (carta1.cor == CartaCor.PRETO || carta2.cor == CartaCor.PRETO) {
+            return -50
+        }
+    }
+
+    if (carta1.cor == CartaCor.PRETO || carta2.cor == CartaCor.PRETO) {
+        return -50
+    }
+
+    return 0
+}
+
 fun main() {
     var pontuacaoParticipante1 = 0
     var pontuacaoParticipante2 = 0
 
     while (true) {
-
         val opcao = exibirMenu()
 
         when (opcao) {
             1 -> {
                 println("Opção INICIAR selecionada.")
 
-
                 val tamanhoTabuleiro = escolherTabuleiro()
-
 
                 val nomeParticipante1 = obterNomeParticipante(1)
                 val nomeParticipante2 = obterNomeParticipante(2)
 
-
                 val corParticipante1 = escolherCor(1)
                 val corParticipante2 = escolherCor(2)
-
 
                 println("Configurações concluídas!")
                 println("Tabuleiro de tamanho $tamanhoTabuleiro x $tamanhoTabuleiro")
                 println("$nomeParticipante1 escolheu a cor ${corParticipante1.name}.")
                 println("$nomeParticipante2 escolheu a cor ${corParticipante2.name}.")
 
-
                 val tabuleiro = criarTabuleiro(tamanhoTabuleiro)
-
+                val totalPares = (tamanhoTabuleiro * tamanhoTabuleiro) / 2
 
                 var jogoAtivo = true
                 var vezDoParticipante1 = true
@@ -195,24 +220,41 @@ fun main() {
                     cartasViradas.add(Pair(linha, coluna))
                     exibirTabuleiro(tabuleiro)
 
-
                     if (cartasViradas.size == 2) {
                         val (linha1, coluna1) = cartasViradas[0]
                         val (linha2, coluna2) = cartasViradas[1]
                         val carta1 = tabuleiro[linha1][coluna1]
                         val carta2 = tabuleiro[linha2][coluna2]
 
-                        if (carta1.id == carta2.id) {
-                            println("Par encontrado! Pontuação +1 para $participanteAtual.")
-                            if (vezDoParticipante1) pontuacaoParticipante1++ else pontuacaoParticipante2++
-                        } else {
-                            println("Par errado. As cartas serão desviradas.")
+                        val pontos = verificarPontos(carta1, carta2, corParticipante1, corParticipante2, vezDoParticipante1)
+
+                        if (pontos > 0) {
+                            println("Par encontrado! Pontuação +$pontos para $participanteAtual.")
+                            if (vezDoParticipante1) pontuacaoParticipante1 += pontos else pontuacaoParticipante2 += pontos
+                        } else if (pontos < 0) {
+                            println("Par errado. Você perdeu ${-pontos} pontos!")
+                            if (vezDoParticipante1) pontuacaoParticipante1 += pontos else pontuacaoParticipante2 += pontos
+                        }
+
+                        if (vezDoParticipante1 && pontuacaoParticipante1 < 0) pontuacaoParticipante1 = 0
+                        if (!vezDoParticipante1 && pontuacaoParticipante2 < 0) pontuacaoParticipante2 = 0
+
+                        if (carta1.id != carta2.id) {
                             carta1.virada = false
                             carta2.virada = false
                         }
 
                         cartasViradas.clear()
                         vezDoParticipante1 = !vezDoParticipante1
+                    }
+
+                    if (tabuleiro.flatten().all { it.virada }) {
+                        jogoAtivo = false
+                        println("\nJogo terminado!")
+                        println("Pontuação final:")
+                        println("$nomeParticipante1: $pontuacaoParticipante1 pontos")
+                        println("$nomeParticipante2: $pontuacaoParticipante2 pontos")
+                        println("O vencedor é ${if (pontuacaoParticipante1 > pontuacaoParticipante2) nomeParticipante1 else nomeParticipante2}!")
                     }
                 }
             }
@@ -230,8 +272,10 @@ fun main() {
             }
             else -> {
                 println("Opção inválida.")
+            }
         }
     }
 }
+
 
 // Aguardando features restantes
