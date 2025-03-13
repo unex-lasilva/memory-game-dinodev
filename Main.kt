@@ -133,36 +133,42 @@ fun exibirTabuleiro(tabuleiro: List<List<Carta>>) {
     println("   " + (1..tabuleiro.size).joinToString("  ") { it.toString() })
 }
 
-fun verificarPontos(carta1: Carta, carta2: Carta, corParticipante1: Cor, corParticipante2: Cor, vezDoParticipante1: Boolean): Int {
+fun verificarPontos(
+    carta1: Carta, carta2: Carta,
+    corParticipante1: Cor, corParticipante2: Cor,
+    vezDoParticipante1: Boolean
+): Int {
 
-    if (carta1.id == carta2.id) {
+    // Regra 1: Par de cartas com fundo amarelo
+    if (carta1.cor == CartaCor.AMARELO && carta2.cor == CartaCor.AMARELO) {
+        return 1
+    }
 
-        if (carta1.cor == CartaCor.AMARELO) {
-            return 1
-        }
+    // Regra 2: Par de cartas com fundo da cor do participante
+    if ((vezDoParticipante1 && carta1.cor == CartaCor.valueOf(corParticipante1.name) && carta2.cor == CartaCor.valueOf(corParticipante1.name)) ||
+        (!vezDoParticipante1 && carta1.cor == CartaCor.valueOf(corParticipante2.name) && carta2.cor == CartaCor.valueOf(corParticipante2.name))) {
+        return 5
+    }
 
-        if ((vezDoParticipante1 && carta1.cor == CartaCor.valueOf(corParticipante1.name)) ||
-            (!vezDoParticipante1 && carta1.cor == CartaCor.valueOf(corParticipante2.name))) {
-            return 5
-        }
-
-        if ((vezDoParticipante1 && carta1.cor == CartaCor.valueOf(corParticipante2.name)) ||
-            (!vezDoParticipante1 && carta1.cor == CartaCor.valueOf(corParticipante1.name))) {
-            return 5
-        }
-    } else {
-
-        if (carta1.cor == CartaCor.PRETO || carta2.cor == CartaCor.PRETO) {
-            return -50
+    // Regra 3: Par de cartas com fundo da cor do adversário
+    if ((vezDoParticipante1 && carta1.cor == CartaCor.valueOf(corParticipante2.name) && carta2.cor == CartaCor.valueOf(corParticipante2.name)) ||
+        (!vezDoParticipante1 && carta1.cor == CartaCor.valueOf(corParticipante1.name) && carta2.cor == CartaCor.valueOf(corParticipante1.name))) {
+        if (vezDoParticipante1) {
+            return if (carta1.id == carta2.id) 1 else -2
+        } else {
+            return if (carta1.id == carta2.id) 1 else -2
         }
     }
 
+    // Regra 4: Carta com fundo preto
     if (carta1.cor == CartaCor.PRETO || carta2.cor == CartaCor.PRETO) {
-        return -50
+        return if (carta1.id == carta2.id) 50 else -50
     }
 
+    // Caso não tenha nenhuma pontuação específica
     return 0
 }
+
 
 fun main() {
     var pontuacaoParticipante1 = 0
