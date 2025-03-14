@@ -23,12 +23,17 @@ fun getCorAnsi(cor: CartaCor): String {
     }
 }
 
-fun exibirMenu(): Int {
+fun exibirMenu(jogoTerminou: Boolean): Int {
     println("Manga Rosa Memory Game")
     println("1. INICIAR")
     println("2. PONTUAÇÃO PARTICIPANTES")
     println("3. REGRAS DO JOGO")
-    println("4. SAIR")
+
+    if (jogoTerminou) {
+        println("4. JOGAR NOVAMENTE")
+    }
+
+    println("5. SAIR")
     print("Informe sua opção: ")
 
     return readLine()?.toIntOrNull() ?: 1
@@ -98,22 +103,56 @@ fun escolherCor(participante: Int): Cor {
 }
 
 fun criarTabuleiro(tamanho: Int): List<List<Carta>> {
-    val cores = listOf(CartaCor.VERMELHO, CartaCor.AZUL, CartaCor.AMARELO, CartaCor.PRETO)
-    val cartas = mutableListOf<Carta>()
     val totalPares = (tamanho * tamanho) / 2
 
-    val idsPorCor = mutableMapOf<CartaCor, Int>()
-    var idAtual = 0
-
-    repeat(totalPares) {
-        val cor = cores.random()
-        val id = idsPorCor.getOrPut(cor) { idAtual++ }
-        cartas.add(Carta(id, cor))
-        cartas.add(Carta(id, cor))
+    // Definindo a distribuição de cores com base no tamanho do tabuleiro
+    val paresAzulVermelho = when (tamanho) {
+        4 -> 4
+        6 -> 9
+        8 -> 16
+        10 -> 25
+        else -> 0
     }
 
+    val paresPreto = when (tamanho) {
+        4 -> 1
+        6 -> 2
+        8 -> 4
+        10 -> 6
+        else -> 0
+    }
+
+    val paresAmarelo = totalPares - paresAzulVermelho - paresPreto
+
+    // Criando as cartas
+    val cartas = mutableListOf<Carta>()
+    var idAtual = 0
+
+    // Adicionando pares de azul e vermelho
+    repeat(paresAzulVermelho) {
+        cartas.add(Carta(idAtual, CartaCor.AZUL))
+        cartas.add(Carta(idAtual, CartaCor.VERMELHO))
+        idAtual++
+    }
+
+    // Adicionando pares de preto
+    repeat(paresPreto) {
+        cartas.add(Carta(idAtual, CartaCor.PRETO))
+        cartas.add(Carta(idAtual, CartaCor.PRETO))
+        idAtual++
+    }
+
+    // Adicionando pares de amarelo
+    repeat(paresAmarelo) {
+        cartas.add(Carta(idAtual, CartaCor.AMARELO))
+        cartas.add(Carta(idAtual, CartaCor.AMARELO))
+        idAtual++
+    }
+
+    // Embaralhando as cartas
     cartas.shuffle()
 
+    // Dividindo o tabuleiro em linhas e colunas
     return cartas.chunked(tamanho)
 }
 
@@ -134,129 +173,42 @@ fun exibirTabuleiro(tabuleiro: List<List<Carta>>) {
 }
 
 fun verificarPontos(carta1: Carta, carta2: Carta, corParticipante1: Cor, corParticipante2: Cor, vezDoParticipante1: Boolean): Int {
+    return when {
+        // Par de preto: ganha 50 pontos e continua a vez
+        carta1.cor == CartaCor.PRETO && carta2.cor == CartaCor.PRETO -> 50
 
-    if (carta1.id == carta2.id) {
+        // Par de amarelo: ganha 1 ponto
+        carta1.cor == CartaCor.AMARELO && carta2.cor == CartaCor.AMARELO -> 1
 
-        if (carta1.cor == CartaCor.AMARELO) {
-            return 1
-        }
+        // Par da cor do jogador: ganha 5 pontos
+        carta1.cor == CartaCor.valueOf(corParticipante1.name) && carta2.cor == CartaCor.valueOf(corParticipante1.name) && vezDoParticipante1 -> 5
+        carta1.cor == CartaCor.valueOf(corParticipante2.name) && carta2.cor == CartaCor.valueOf(corParticipante2.name) && !vezDoParticipante1 -> 5
 
-        if ((vezDoParticipante1 && carta1.cor == CartaCor.valueOf(corParticipante1.name)) ||
-            (!vezDoParticipante1 && carta1.cor == CartaCor.valueOf(corParticipante2.name))) {
-            return 5
-        }
+        // Par da cor do adversário: se acertar, ganha 2 pontos; se errar, perde 2 pontos
+        carta1.cor == CartaCor.valueOf(corParticipante2.name) && carta2.cor == CartaCor.valueOf(corParticipante2.name) && vezDoParticipante1 -> if (carta1.id == carta2.id) 2 else -2
+        carta1.cor == CartaCor.valueOf(corParticipante1.name) && carta2.cor == CartaCor.valueOf(corParticipante1.name) && !vezDoParticipante1 -> if (carta1.id == carta2.id) 2 else -2
 
-        if ((vezDoParticipante1 && carta1.cor == CartaCor.valueOf(corParticipante2.name)) ||
-            (!vezDoParticipante1 && carta1.cor == CartaCor.valueOf(corParticipante1.name))) {
-            return 5
-        }
-    } else {
+        // Erro ao encontrar par de preto: perde 50 pontos
+        carta1.cor == CartaCor.PRETO || carta2.cor == CartaCor.PRETO -> -50
 
-        if (carta1.cor == CartaCor.PRETO || carta2.cor == CartaCor.PRETO) {
-            return -50
-        }
+        // Outros casos: sem pontuação
+        else -> 0
     }
-
-    if (carta1.cor == CartaCor.PRETO || carta2.cor == CartaCor.PRETO) {
-        return -50
-    }
-
-    return 0
 }
 
 fun main() {
     var pontuacaoParticipante1 = 0
     var pontuacaoParticipante2 = 0
+    var jogoTerminou = false // Variável para controlar se o jogo terminou
 
     while (true) {
-        val opcao = exibirMenu()
+        val opcao = exibirMenu(jogoTerminou) // Passar o estado do jogo para o menu
 
         when (opcao) {
             1 -> {
                 println("Opção INICIAR selecionada.")
-
-                val tamanhoTabuleiro = escolherTabuleiro()
-
-                val nomeParticipante1 = obterNomeParticipante(1)
-                val nomeParticipante2 = obterNomeParticipante(2)
-
-                val corParticipante1 = escolherCor(1)
-                val corParticipante2 = escolherCor(2)
-
-                println("Configurações concluídas!")
-                println("Tabuleiro de tamanho $tamanhoTabuleiro x $tamanhoTabuleiro")
-                println("$nomeParticipante1 escolheu a cor ${corParticipante1.name}.")
-                println("$nomeParticipante2 escolheu a cor ${corParticipante2.name}.")
-
-                val tabuleiro = criarTabuleiro(tamanhoTabuleiro)
-                val totalPares = (tamanhoTabuleiro * tamanhoTabuleiro) / 2
-
-                var jogoAtivo = true
-                var vezDoParticipante1 = true
-                var cartasViradas = mutableListOf<Pair<Int, Int>>()
-
-                while (jogoAtivo) {
-                    exibirTabuleiro(tabuleiro)
-
-                    val participanteAtual = if (vezDoParticipante1) nomeParticipante1 else nomeParticipante2
-                    println("Vez de $participanteAtual")
-
-                    print("Escolha uma linha e uma coluna (ex: 1 2): ")
-                    val (linha, coluna) = readLine()?.split(" ")?.map { it.toInt() - 1 } ?: continue
-
-                    if (linha !in 0 until tamanhoTabuleiro || coluna !in 0 until tamanhoTabuleiro) {
-                        println("Posição inválida. Tente novamente.")
-                        continue
-                    }
-
-                    val cartaSelecionada = tabuleiro[linha][coluna]
-
-                    if (cartaSelecionada.virada) {
-                        println("Carta já virada. Tente novamente.")
-                        continue
-                    }
-
-                    cartaSelecionada.virada = true
-                    cartasViradas.add(Pair(linha, coluna))
-                    exibirTabuleiro(tabuleiro)
-
-                    if (cartasViradas.size == 2) {
-                        val (linha1, coluna1) = cartasViradas[0]
-                        val (linha2, coluna2) = cartasViradas[1]
-                        val carta1 = tabuleiro[linha1][coluna1]
-                        val carta2 = tabuleiro[linha2][coluna2]
-
-                        val pontos = verificarPontos(carta1, carta2, corParticipante1, corParticipante2, vezDoParticipante1)
-
-                        if (pontos > 0) {
-                            println("Par encontrado! Pontuação +$pontos para $participanteAtual.")
-                            if (vezDoParticipante1) pontuacaoParticipante1 += pontos else pontuacaoParticipante2 += pontos
-                        } else if (pontos < 0) {
-                            println("Par errado. Você perdeu ${-pontos} pontos!")
-                            if (vezDoParticipante1) pontuacaoParticipante1 += pontos else pontuacaoParticipante2 += pontos
-                        }
-
-                        if (vezDoParticipante1 && pontuacaoParticipante1 < 0) pontuacaoParticipante1 = 0
-                        if (!vezDoParticipante1 && pontuacaoParticipante2 < 0) pontuacaoParticipante2 = 0
-
-                        if (carta1.id != carta2.id) {
-                            carta1.virada = false
-                            carta2.virada = false
-                        }
-
-                        cartasViradas.clear()
-                        vezDoParticipante1 = !vezDoParticipante1
-                    }
-
-                    if (tabuleiro.flatten().all { it.virada }) {
-                        jogoAtivo = false
-                        println("\nJogo terminado!")
-                        println("Pontuação final:")
-                        println("$nomeParticipante1: $pontuacaoParticipante1 pontos")
-                        println("$nomeParticipante2: $pontuacaoParticipante2 pontos")
-                        println("O vencedor é ${if (pontuacaoParticipante1 > pontuacaoParticipante2) nomeParticipante1 else nomeParticipante2}!")
-                    }
-                }
+                iniciarJogo()
+                jogoTerminou = false // Reiniciar o estado do jogo
             }
             2 -> {
                 println("Opção PONTUAÇÃO PARTICIPANTES selecionada.")
@@ -267,6 +219,15 @@ fun main() {
                 exibirRegras()
             }
             4 -> {
+                if (jogoTerminou) {
+                    println("Reiniciando o jogo...")
+                    iniciarJogo()
+                    jogoTerminou = false // Reiniciar o estado do jogo
+                } else {
+                    println("Opção inválida. O jogo ainda não terminou.")
+                }
+            }
+            5 -> {
                 println("Saindo do jogo. Até logo!")
                 break
             }
@@ -277,5 +238,140 @@ fun main() {
     }
 }
 
+fun iniciarJogo() {
+    var pontuacaoParticipante1 = 0
+    var pontuacaoParticipante2 = 0
 
-// Aguardando features restantes
+    val tamanhoTabuleiro = escolherTabuleiro()
+
+    val nomeParticipante1 = obterNomeParticipante(1)
+    val nomeParticipante2 = obterNomeParticipante(2)
+
+    val corParticipante1 = escolherCor(1)
+    val corParticipante2 = escolherCor(2)
+
+    println("Configurações concluídas!")
+    println("Tabuleiro de tamanho $tamanhoTabuleiro x $tamanhoTabuleiro")
+    println("$nomeParticipante1 escolheu a cor ${corParticipante1.name}.")
+    println("$nomeParticipante2 escolheu a cor ${corParticipante2.name}.")
+
+    val tabuleiro = criarTabuleiro(tamanhoTabuleiro)
+    val totalPares = (tamanhoTabuleiro * tamanhoTabuleiro) / 2
+
+    var jogoAtivo = true
+    var vezDoParticipante1 = true
+    var cartasViradas = mutableListOf<Pair<Int, Int>>()
+
+    while (jogoAtivo) {
+        exibirTabuleiro(tabuleiro)
+
+        val participanteAtual = if (vezDoParticipante1) nomeParticipante1 else nomeParticipante2
+        println("Vez de $participanteAtual")
+
+        var tentativas = 0
+        var entradaValida = false
+        var linha = -1
+        var coluna = -1
+
+        while (!entradaValida && tentativas < 3) {
+            print("Escolha uma linha e uma coluna (ex: 1 2): ")
+            val entrada = readLine()
+
+            if (entrada.isNullOrBlank() || entrada.split(" ").size < 2) {
+                tentativas++
+                if (tentativas < 3) {
+                    println("Por favor, digite uma linha e coluna (exemplo: 1 2). Tentativas restantes: ${3 - tentativas}")
+                }
+            } else {
+                val partes = entrada.split(" ")
+                linha = partes[0].toIntOrNull()?.minus(1) ?: -1
+                coluna = partes[1].toIntOrNull()?.minus(1) ?: -1
+
+                if (linha !in 0 until tamanhoTabuleiro || coluna !in 0 until tamanhoTabuleiro) {
+                    tentativas++
+                    if (tentativas < 3) {
+                        println("Posição inválida. Tente novamente. Tentativas restantes: ${3 - tentativas}")
+                    }
+                } else {
+                    entradaValida = true
+                }
+            }
+        }
+
+        if (!entradaValida) {
+            println("Número máximo de tentativas excedido. $participanteAtual perdeu a vez.")
+            vezDoParticipante1 = !vezDoParticipante1
+            continue
+        }
+
+        val cartaSelecionada = tabuleiro[linha][coluna]
+
+        if (cartaSelecionada.virada) {
+            println("Carta já virada. Tente novamente.")
+            continue
+        }
+
+        cartaSelecionada.virada = true
+        cartasViradas.add(Pair(linha, coluna))
+        exibirTabuleiro(tabuleiro)
+
+        if (cartasViradas.size == 2) {
+            val (linha1, coluna1) = cartasViradas[0]
+            val (linha2, coluna2) = cartasViradas[1]
+            val carta1 = tabuleiro[linha1][coluna1]
+            val carta2 = tabuleiro[linha2][coluna2]
+
+            val pontos = verificarPontos(carta1, carta2, corParticipante1, corParticipante2, vezDoParticipante1)
+
+            if (pontos > 0) {
+                println("Par encontrado! Pontuação +$pontos para $participanteAtual.")
+                if (vezDoParticipante1) pontuacaoParticipante1 += pontos else pontuacaoParticipante2 += pontos
+
+                // Se for um par de preto, o jogador continua a vez
+                if (carta1.cor == CartaCor.PRETO && carta2.cor == CartaCor.PRETO) {
+                    println("Você encontrou um par de preto! Continue jogando.")
+                    cartasViradas.clear()
+                    continue
+                }
+            } else if (pontos < 0) {
+                println("Par errado. Você perdeu ${-pontos} pontos!")
+                if (vezDoParticipante1) pontuacaoParticipante1 += pontos else pontuacaoParticipante2 += pontos
+
+                // Verificar se o jogador perdeu o jogo (ficou com menos de 50 pontos após perder 50)
+                if ((vezDoParticipante1 && pontuacaoParticipante1 < 0) || (!vezDoParticipante1 && pontuacaoParticipante2 < 0)) {
+                    if (pontos == -50) {
+                        println("$participanteAtual não tinha pontos suficientes para perder 50 pontos. Fim de jogo!")
+                        jogoAtivo = false
+                        break
+                    } else {
+                        // Zerar a pontuação se ficar negativa (exceto no caso de perder 50 pontos)
+                        if (vezDoParticipante1) pontuacaoParticipante1 = 0 else pontuacaoParticipante2 = 0
+                        println("Pontuação zerada para $participanteAtual.")
+                    }
+                }
+            }
+
+            // Passar a vez se não for um par de preto
+            if (carta1.cor != CartaCor.PRETO || carta2.cor != CartaCor.PRETO) {
+                vezDoParticipante1 = !vezDoParticipante1
+            }
+
+            // Virar as cartas de volta se não forem iguais
+            if (carta1.id != carta2.id) {
+                carta1.virada = false
+                carta2.virada = false
+            }
+
+            cartasViradas.clear()
+        }
+
+        if (tabuleiro.flatten().all { it.virada }) {
+            jogoAtivo = false
+            println("\nJogo terminado!")
+            println("Pontuação final:")
+            println("$nomeParticipante1: $pontuacaoParticipante1 pontos")
+            println("$nomeParticipante2: $pontuacaoParticipante2 pontos")
+            println("O vencedor é ${if (pontuacaoParticipante1 > pontuacaoParticipante2) nomeParticipante1 else nomeParticipante2}!")
+        }
+    }
+}
