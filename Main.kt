@@ -33,7 +33,7 @@ fun exibirMenu(jogoTerminou: Boolean): Int {
         println("4. JOGAR NOVAMENTE")
     }
 
-    println("5. SAIR")
+    println("0. SAIR")
     print("Informe sua opção: ")
 
     return readLine()?.toIntOrNull() ?: 1
