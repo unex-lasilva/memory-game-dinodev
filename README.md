@@ -37,6 +37,9 @@ Vamos exemplificar essas regras iniciais para vocês. Um exemplo sempre é uma b
 4.	Se a(o) participante escolher uma carta já virada, uma mensagem de atenção deve ser exibida: “A carta da posição informada já está virada, por favor, escolha outra posição”. Você deve continuar solicitando ao usuário uma nova posição até que uma posição válida seja informada ou até que o usuário erre 3 vezes. Caso a(o) participante erre três vezes, ela(ele) perde a vez para a(o) adversária(o).
 
 
-**Team members:**
-1. *Nome do membro* - *e-mail*
-2. *Nome do membro* - *e-mail*
+**DINODEV:**
+1. *Franklin Ferreira dos Santos* - *franklinferreira280@gmail.com*
+2. *Giovanna Rodrigues Salomão* - *irodrigues708@gmail.com*
+3. *Lucas Silva Oliveira* - *lucasolv.info@gmail.com*
+4. *Lucas de Jesus Barreto* - *ljbarreto04@gmail.com*
+
